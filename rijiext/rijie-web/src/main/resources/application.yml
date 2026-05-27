@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: rijie-web
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/rijie
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+## 日志配置
+#logging:
+#  # 日志级别：格式为「包名:级别」，可配置多个
+#  level:
+#    root: INFO  # 根日志级别（默认）
+#    org.example: DEBUG  # 自己的业务包，设为DEBUG便于调试
+#    org.mybatis: DEBUG  # MyBatis的日志级别，可查看SQL执行
+#    org.springframework: WARN  # Spring框架日志级别，减少冗余
+#  # 日志输出格式
+#  pattern:
+#    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"  # 控制台输出格式
+#    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"     # 文件输出格式
+#  # 日志文件存储位置（相对路径，会生成在项目根目录下）
+#  file:
+#    name: logs/app.log  # 日志文件名称和路径
+#  # 日志滚动配置（Spring Boot 2.4+支持）
+#  logback:
+#    rollingpolicy:
+#      max-file-size: 10MB  # 单个日志文件最大10MB
+#      max-history: 7       # 保留7天的日志文件
+#      clean-history-on-start: false  # 启动时不清理历史日志

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <!-- 1. 定义配置参数（可灵活修改，便于维护） -->
+    <property name="LOG_PATH" value="./logs" /> <!-- 日志文件存储根路径（项目根目录下的logs文件夹） -->
+    <property name="LOG_FILE_NAME" value="part-time-job" /> <!-- 日志文件前缀 -->
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" /> <!-- 控制台日志格式 -->
+    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" /> <!-- 文件日志格式 -->
+    <property name="MAX_FILE_SIZE" value="100MB" /> <!-- 单个日志文件最大大小 -->
+    <property name="MAX_HISTORY" value="30" /> <!-- 日志文件保留天数 -->
+
+    <!-- 2. 控制台输出Appender（ConsoleAppender） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 编码器：设置日志格式 -->
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset> <!-- 字符编码 -->
+        </encoder>
+        <!-- 过滤器：只输出INFO及以上级别日志（可选） -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+<!--
+    &lt;!&ndash; 3. 文件输出Appender（RollingFileAppender：按大小+时间分割日志） &ndash;&gt;
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        &lt;!&ndash; 日志文件路径+名称 &ndash;&gt;
+        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+        &lt;!&ndash; 滚动策略：按时间和文件大小分割 &ndash;&gt;
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            &lt;!&ndash; 分割后的日志文件名称（按天分割，如part-time-job-2025-12-18.log） &ndash;&gt;
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            &lt;!&ndash; 日志文件保留天数 &ndash;&gt;
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            &lt;!&ndash; 按大小分割的触发条件 &ndash;&gt;
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            &lt;!&ndash; 清理旧日志：当文件大小超过总大小限制时，删除旧日志 &ndash;&gt;
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        &lt;!&ndash; 编码器：设置日志格式 &ndash;&gt;
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+-->
+
+<!--
+    &lt;!&ndash; 4. 异步日志Appender（AsyncAppender：提升性能，避免日志写入阻塞接口） &ndash;&gt;
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        &lt;!&ndash; 关联文件输出Appender &ndash;&gt;
+        <appender-ref ref="FILE" />
+        &lt;!&ndash; 队列大小：默认256，可根据并发量调整 &ndash;&gt;
+        <queueSize>1024</queueSize>
+        &lt;!&ndash; 当队列满时，是否丢弃日志（false表示阻塞，直到队列有空间） &ndash;&gt;
+        <discardingThreshold>0</discardingThreshold>
+        &lt;!&ndash; 异步日志的错误处理：记录到控制台 &ndash;&gt;
+        <includeCallerData>true</includeCallerData>
+    </appender>
+-->
+
+    <!-- 5. 针对特定包/类的日志级别配置 -->
+    <!-- （1）AOP日志切面：INFO级别，只输出INFO及以上日志 -->
+    <logger name="org.example.aspect.ApiLogAspect" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+<!--    &lt;!&ndash; （2）MyBatis Mapper：DEBUG级别，可查看SQL执行语句（开发环境用，生产环境建议关闭） &ndash;&gt;
+    <logger name="org.example.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    &lt;!&ndash; （3）Spring框架：WARN级别，减少无关日志输出 &ndash;&gt;
+    <logger name="org.springframework" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>-->
+
+    <!-- 6. 根日志配置（默认日志级别） -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+<!--        <appender-ref ref="ASYNC_FILE" />-->
+    </root>
+</configuration>
