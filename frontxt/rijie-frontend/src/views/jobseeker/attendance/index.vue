@@ -155,7 +155,7 @@ onMounted(async () => {
   if (!jobInfo.jobId) {
     
     ElMessage.warning('请先报名岗位，再进行考勤操作！')
-    router.push({ name: 'SeekerAttendance' })
+    router.push({ name: 'JobseekerWorkbench' })
     return
   }
 

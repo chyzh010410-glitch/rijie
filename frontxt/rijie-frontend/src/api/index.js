@@ -1,7 +1,7 @@
 // src/api/index.js
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router' // 用于Token过期跳转登录
+import router from '@/router'
 
 // 1. 创建Axios实例（全局配置）
 const request = axios.create({
@@ -50,7 +50,6 @@ request.interceptors.response.use(
           // 清除过期Token
           localStorage.removeItem('token')
           // 跳转到登录页
-          const router = useRouter()
           router.push('/login')
         })
       }

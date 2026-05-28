@@ -47,7 +47,7 @@ import { ElMessage, ElCard, ElTable, ElTableColumn, ElSelect, ElOption } from 'e
 // 导入考勤接口
 import { getEmployerAttendance, updateAttendanceStatus } from '@/api/modules/attendance.js'
 // 导入状态映射
-import { getStatusText, getStatusColor } from '@/constant/attendance.js'
+import { getStatusText, getStatusColor } from '@/api/modules/constant/attendance.js'
 
 // 获取当前登录雇主信息
 const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')

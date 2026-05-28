@@ -68,7 +68,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 6. 提取纯Token（去掉Bearer前缀）
         String token = authHeader.substring(TOKEN_PREFIX.length()).trim();
-        log.info("提取的纯Token：{}", token);
+//        log.info("提取的纯Token：{}", token);
 
         try {
             // 7. 解析Token（工具类需保证抛出具体异常）
@@ -79,7 +79,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             String username = claims.get("username").toString();
             request.setAttribute(USER_ID_ATTR, userId);
             request.setAttribute(USERNAME_ATTR, username);
-            log.info("Token解析成功，用户ID：{}，用户名：{}", userId, username);
+//            log.info("Token解析成功，用户ID：{}，用户名：{}", userId, username);
 
             // 9. Token有效，放行
             return true;
