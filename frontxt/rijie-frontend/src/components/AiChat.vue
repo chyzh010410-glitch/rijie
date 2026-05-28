@@ -86,8 +86,10 @@ async function send() {
     const history = messages.value.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
     const { data } = await axios.post('/ai/chat', { message: text, token: auth.token, history })
     chat.addMessage({ role: 'assistant', content: data.reply })
-  } catch {
-    chat.addMessage({ role: 'assistant', content: '抱歉，AI服务暂时不可用，请稍后再试。' })
+  } catch (err) {
+    console.error('[AI客服] 请求失败:', err)
+    const msg = err.response ? `服务异常(${err.response.status})，请稍后重试` : 'AI服务未启动，请确认已运行 python main.py'
+    chat.addMessage({ role: 'assistant', content: msg })
   } finally {
     loading.value = false
     scrollBottom()
