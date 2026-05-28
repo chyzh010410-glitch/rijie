@@ -1,17 +1,24 @@
-"""LangGraph 智能客服 Agent（懒加载避免import时卡死）"""
-import os
+"""LangGraph 智能客服 Agent"""
+import os, sys
+print("[AI服务] 加载模块...", flush=True)
+
+# 阻止tiktoken在import时联网下载分词器（国内网络卡死的第一元凶）
+os.environ.setdefault("TIKTOKEN_CACHE_DIR", os.path.join(os.path.dirname(__file__), ".tiktoken"))
+os.environ.setdefault("OPENAI_LOG", "info")
+
 import json
 from dotenv import load_dotenv
+load_dotenv()
 
+print("[AI服务] 导入langchain...", flush=True)
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+print("[AI服务] langchain导入完成", flush=True)
 
 from tools import search_jobs, get_job_detail, recommend_jobs
-
-load_dotenv()
 
 SYSTEM_PROMPT = """你是"日结兼职平台"的智能客服助手，名叫小兼。
 
@@ -37,7 +44,7 @@ def _get_current_token() -> str:
 
 
 def _build_agent():
-    """懒加载：首次调用时才初始化LLM和Graph"""
+    print("[AI服务] 正在初始化LLM...", flush=True)
     llm = ChatOpenAI(
         model=os.getenv("LLM_MODEL", "deepseek-chat"),
         api_key=os.getenv("LLM_API_KEY"),
@@ -46,12 +53,13 @@ def _build_agent():
         max_retries=1,
         timeout=30,
     )
+    print("[AI服务] LLM就绪，构建Agent...", flush=True)
 
     @tool
     def tool_search_jobs(keyword: str = "", job_type: str = "",
                          min_salary: int = 0, max_salary: int = 0,
                          work_address: str = "") -> str:
-        """搜索日结兼职岗位。参数均可选：keyword(岗位名称关键词)、job_type(类型如餐饮/快递/家教/零售/促销/安保)、min_salary(最低日薪)、max_salary(最高日薪)、work_address(工作地址模糊匹配)。"""
+        """搜索日结兼职岗位。"""
         result = search_jobs(_get_current_token(), keyword=keyword, job_type=job_type,
                              min_salary=min_salary, max_salary=max_salary,
                              work_address=work_address, page_size=5)
@@ -59,13 +67,13 @@ def _build_agent():
 
     @tool
     def tool_get_job_detail(job_id: int) -> str:
-        """查询单个岗位的完整详情。job_id: 岗位ID"""
+        """查询单个岗位的完整详情。"""
         result = get_job_detail(_get_current_token(), job_id)
         return json.dumps(result, ensure_ascii=False, indent=2)
 
     @tool
     def tool_recommend_jobs() -> str:
-        """为当前用户推荐最匹配的日结岗位（基于技能标签和地址）"""
+        """推荐最匹配的日结岗位。"""
         result = recommend_jobs(_get_current_token())
         return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -98,17 +106,15 @@ def chat(message: str, token: str, history: list = None) -> str:
     _current_token = token
 
     if _agent is None:
-        print("[AI服务] 正在初始化LangGraph Agent...")
         _agent = _build_agent()
-        print("[AI服务] Agent初始化完成")
+        print("[AI服务] Agent就绪", flush=True)
 
     messages = []
     if history:
         for h in history:
-            role = h.get("role", "user")
-            if role == "user":
+            if h.get("role") == "user":
                 messages.append(HumanMessage(content=h["content"]))
-            elif role == "assistant":
+            elif h.get("role") == "assistant":
                 messages.append(AIMessage(content=h["content"]))
 
     messages.append(HumanMessage(content=message))
