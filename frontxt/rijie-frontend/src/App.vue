@@ -1,10 +1,10 @@
 <script setup>
-
+import AiChat from '@/components/AiChat.vue'
 </script>
 
 <template>
-  <!-- 路由视图出口：所有路由组件都会渲染到这里 -->
   <router-view />
+  <AiChat />
 </template>
 
 <style>
