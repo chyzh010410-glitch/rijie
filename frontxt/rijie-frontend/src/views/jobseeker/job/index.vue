@@ -347,7 +347,7 @@ const confirmApply = async () => {
   }
   applyLoading.value[jobId] = true
   try {
-    await submitJobApplication({ seekerId: Number(userInfo.id), jobId: jobId })
+    await submitJobApplication({ jobId: jobId })
     ElMessage.success('申请成功，等待雇主审核')
     await getMyApplicationsList()
   } catch (err) { ElMessage.error('申请失败'); } finally { applyLoading.value[jobId] = false }
@@ -358,18 +358,13 @@ const getMyApplicationsList = async () => {
     const auth = useAuthStore()
     const userInfo = auth.userInfo
     if (userInfo?.id) {
-      const res = await getMyApplications(userInfo.id)
+      const res = await getMyApplications()
       myApplications.value = res?.data || res || []
     }
   } catch (err) { ElMessage.error('获取申请记录失败'); }
 }
 
 // ===================== ✅ 评价核心逻辑（适配弹窗，无路由！） =====================
-// 从userInfo获取用户ID
-const getUserId = () => {
-  return Number(useAuthStore().userId) || null
-}
-const seekerId = ref(getUserId())
 
 // 评价变量
 const evaluationList = ref([])
@@ -388,7 +383,7 @@ const hasEvaluated = computed(() => {
 // 🔥 2. 新增：核心校验 → 只有【薪资已结算】才能评价（你的业务规则）
 const canEvaluate = computed(() => {
   // 无岗位/未登录 → 不允许
-  if (!currentJob.value.id || !seekerId.value) return false
+  if (!currentJob.value.id || !useAuthStore().userId) return false
 
   // 查找当前用户 对 该岗位 的申请记录
   const application = myApplications.value.find(
@@ -428,13 +423,13 @@ const loadEvaluationList = async () => {
 }
 // 加载我的评价
 const loadMyEvaluations = async () => {
-  if (!seekerId.value) {
+  if (!useAuthStore().userId) {
     console.warn('用户ID为空，跳过加载我的评价')
     myEvaluations.value = []
     return
   }
   try {
-    const res = await getMyEvaluation(seekerId.value)
+    const res = await getMyEvaluation()
     // ✅ 同样适配直接返回数组的情况
     const list = Array.isArray(res) ? res : (res.data || res.list || [])
     myEvaluations.value = list
@@ -446,7 +441,7 @@ const loadMyEvaluations = async () => {
 }
 // 打开评价弹窗
 const openSubmitDialog = () => {
-  if (!seekerId.value) { ElMessage.warning('请先登录'); return }
+  if (!useAuthStore().userId) { ElMessage.warning('请先登录'); return }
   score.value = 5
   content.value = ''
   submitVisible.value = true
@@ -463,12 +458,12 @@ const submitEvaluation = async () => {
   if (!content.value.trim()) { ElMessage.warning('请输入评价内容'); return }
   const jobId = currentJob.value.id
   const employerId = currentJob.value.employerId
-  if (!jobId || !seekerId.value || !employerId) { ElMessage.warning('参数异常'); return }
+  if (!jobId || !useAuthStore().userId || !employerId) { ElMessage.warning('参数异常'); return }
 
   try {
     await addEvaluation({
       jobId: jobId,
-      seekerId: seekerId.value,
+      seekerId: Number(useAuthStore().userId),
       employerId: Number(employerId),
       score: score.value,
       content: content.value.trim()

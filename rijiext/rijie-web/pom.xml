@@ -92,6 +92,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- BCrypt密码加密 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- FastJSON2（轻量、高性能） -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>

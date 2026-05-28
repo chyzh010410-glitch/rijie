@@ -8,7 +8,7 @@ export const getJobEvaluation = (jobId) => {
     })
 }
 
-// 【求职者】提交评价
+// 【求职者】提交评价（seekerId由后端从JWT读取）
 export const addEvaluation = (data) => {
     return request({
         url: '/evaluation/add',
@@ -18,19 +18,13 @@ export const addEvaluation = (data) => {
 }
 
 // 【求职者】查询我的所有评价
-export const getMyEvaluation = (seekerId) => {
-    return request({
-        url: `/evaluation/my/${seekerId}`,
-        method: 'get'
-    })
+export const getMyEvaluation = () => {
+    return request({ url: '/evaluation/my', method: 'get' })
 }
 
 // 【雇主】查询我收到的所有评价
-export const getEmployerEvaluation = (employerId) => {
-    return request({
-        url: `/evaluation/employer/${employerId}`,
-        method: 'get'
-    })
+export const getEmployerEvaluation = () => {
+    return request({ url: '/evaluation/employer', method: 'get' })
 }
 
 // 【管理员】查询所有评价

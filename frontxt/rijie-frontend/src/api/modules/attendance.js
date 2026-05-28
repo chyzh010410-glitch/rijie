@@ -2,53 +2,21 @@
 import request from '../index'
 
 // ===================== 求职者接口 =====================
-/**
- * 求职者签到
- * @param {Object} params {seekerId, jobId, workDate}
- */
 export const signIn = (params) => {
-    return request({
-        url: '/attendance/sign/in',
-        method: 'POST',
-        params: params // 后端@RequestParam接收，用params传参 ✔️
-    })
+    return request({ url: '/attendance/sign/in', method: 'POST', params })
 }
 
-/**
- * 求职者签退
- * @param {Object} params {seekerId, jobId, workDate}
- */
 export const signOut = (params) => {
-    return request({
-        url: '/attendance/sign/out',
-        method: 'POST',
-        params: params
-    })
+    return request({ url: '/attendance/sign/out', method: 'POST', params })
 }
 
-/**
- * 求职者查询个人考勤记录
- * @param {Number} seekerId 求职者ID
- */
-export const getMyAttendance = (seekerId) => {
-    return request({
-        url: '/attendance/my',
-        method: 'GET',
-        params: { seekerId }
-    })
+export const getMyAttendance = () => {
+    return request({ url: '/attendance/my', method: 'GET' })
 }
 
 // ===================== 雇主接口 =====================
-/**
- * 雇主查询名下所有考勤记录
- * @param {Number} employerId 雇主ID
- */
-export const getEmployerAttendance = (employerId) => {
-    return request({
-        url: '/attendance/employer',
-        method: 'GET',
-        params: { employerId }
-    })
+export const getEmployerAttendance = () => {
+    return request({ url: '/attendance/employer', method: 'GET' })
 }
 
 /**

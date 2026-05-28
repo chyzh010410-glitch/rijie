@@ -49,13 +49,6 @@ import { getEmployerAttendance, updateAttendanceStatus } from '@/api/modules/att
 // 导入状态映射
 import { getStatusText, getStatusColor } from '@/api/modules/constant/attendance.js'
 
-import { useAuthStore } from '@/stores/auth'
-
-// 获取当前登录雇主信息
-const auth = useAuthStore()
-const userInfo = auth.userInfo
-const employerId = userInfo.id // 雇主ID
-
 // 考勤列表
 const attendanceList = ref([])
 
@@ -67,7 +60,7 @@ onMounted(() => {
 // 查询雇主名下所有考勤记录
 const getAttendanceData = async () => {
   try {
-    const res = await getEmployerAttendance(employerId)
+    const res = await getEmployerAttendance()
     attendanceList.value = res || []
   } catch (error) {
     ElMessage.error('查询考勤记录失败：' + error.message)

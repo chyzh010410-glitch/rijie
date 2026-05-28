@@ -149,29 +149,6 @@ const handleDropdownCmd = (command) => {
 }
 
 
-// 提交修改：把所有字段（包括新填的phone/email）传给后端
-// const handleUpdateInfo = async () => {
-//   try {
-//     await infoFormRef.value.validate()
-
-//     // 【调用后端“修改个人信息”接口】
-//     // 示例：假设接口是 updateUserInfoApi，传editForm所有字段
-//     // await updateUserInfoApi(editForm.value)
-
-//     // 模拟接口请求（实际项目替换为真实接口）
-//     await new Promise(resolve => setTimeout(resolve, 500))
-
-//     // 修改成功：更新localStorage的userInfo
-//     localStorage.setItem('userInfo', JSON.stringify(editForm.value))
-//     // 更新页面显示的用户信息
-//     userInfo.value = { ...editForm.value }
-
-//     dialogVisible.value = false
-//     ElMessage.success('个人信息修改成功！')
-//   } catch (error) {
-//     ElMessage.error('请完善表单信息后提交~')
-//   }
-// }
 // ✅ 核心修改：对接真实后端修改接口 - 完美适配你的PUT接口
 const handleUpdateInfo = async () => {
   try {

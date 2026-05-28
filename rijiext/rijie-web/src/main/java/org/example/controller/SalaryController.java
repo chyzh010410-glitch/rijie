@@ -1,9 +1,11 @@
 package org.example.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.pojo.Result;
 import org.example.pojo.Salary;
 import org.example.service.SalaryService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -20,6 +22,9 @@ public class SalaryController {
     @Resource
     private SalaryService salaryService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     // ------------------------------ 系统/雇主接口（算薪） ------------------------------
     /**
      * 自动算薪（可由系统定时触发，或雇主手动触发）
@@ -29,10 +34,10 @@ public class SalaryController {
      * @return 操作结果
      */
     @PostMapping("/calculate")
-    public Result calculateSalary(@RequestParam Long seekerId,
-                                  @RequestParam Long jobId,
+    public Result calculateSalary(@RequestParam Long jobId,
                                   @RequestParam(required = false) LocalDate workDate) {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             // 若无指定日期，默认计算昨天的薪资（日结场景：次日算薪）
             LocalDate date = workDate == null ? LocalDate.now().minusDays(1) : workDate;
             boolean success = salaryService.calculateSalary(seekerId, jobId, date);
@@ -53,8 +58,9 @@ public class SalaryController {
      * @return 薪资记录列表
      */
     @GetMapping("/my")
-    public Result getMySalaries(@RequestParam Long seekerId) {
+    public Result getMySalaries() {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             List<Salary> salaryList = salaryService.getMySalaries(seekerId);
             return Result.success(salaryList);
         } catch (Exception e) {
@@ -69,8 +75,9 @@ public class SalaryController {
      * @return 薪资记录列表
      */
     @GetMapping("/employer")
-    public Result getJobSalaries(@RequestParam Long employerId) {
+    public Result getJobSalaries() {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             List<Salary> salaryList = salaryService.getJobSalaries(employerId);
             return Result.success(salaryList);
         } catch (Exception e) {

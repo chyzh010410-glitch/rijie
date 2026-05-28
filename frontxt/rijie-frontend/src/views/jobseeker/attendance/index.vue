@@ -85,14 +85,8 @@ import { getStatusText, getStatusColor } from '@/api/modules/constant/attendance
 import { getJobDetailById  } from '@/api/modules/seeker/job.js'
 // 在考勤页script setup顶部导入
 import { calculateSalary } from '@/api/modules/seeker/salary'
-import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 const router = useRouter()
-// ========== 安全获取用户信息+求职者ID（从Pinia auth store） ==========
-const auth = useAuthStore()
-const userInfo = auth.userInfo
-const seekerId = auth.userId || null; // 取不到就是null，后续做校验
-
 // ========== 安全初始化岗位信息（从Pinia app store） ==========
 const app = useAppStore()
 const jobInfo = reactive({
@@ -109,46 +103,6 @@ const isSignedIn = ref(false) // 是否已签到
 const isSignedOut = ref(false) // 是否已签退
 const signTips = ref('请在上班时间内完成签到，下班时间内完成签退')
 
-// ========== ✅ 修复错误1+所有逻辑：完整修复 申请状态校验方法 ==========
-// const checkApplyStatus = async () => {
-//   // 前置校验：用户未登录/无求职者ID
-//   if (!seekerId) {
-//     ElMessage.warning('请先登录后再进行考勤操作')
-//     router.push({ name: 'JobseekerWorkbench' })
-//     return false
-//   }
-//   // 前置校验：无岗位ID
-//   if (!jobInfo.jobId) {
-//     ElMessage.warning('请先报名岗位后再进行考勤操作')
-//     router.push({ name: 'JobseekerWorkbench' })
-//     return false
-//   }
-
-//   try {
-//     const res = await getApplyStatus({
-//       seekerId: seekerId, // 当前求职者ID
-//       jobId: jobInfo.jobId // 当前岗位ID
-//     })
-//     // ✅ 核心修复：从res.data里取申请状态！！！
-//     const applyStatus = res.data
-//     console.log("✅ 申请状态查询结果：", applyStatus); // 控制台打印状态，方便你排查
-    
-//     // ✅ 你的规则：1=已通过、3=已入职 都允许考勤
-//     if ([1, 3].includes(applyStatus)) {
-//       return true; // 校验通过，放行
-//     } else {
-//       ElMessage.warning('请等待雇主审核通过后再进行考勤操作')
-//       router.push({ name: 'JobseekerWorkbench' })
-//       return false
-//     }
-//   } catch (error) {
-//     console.error("❌ 查询申请状态失败：", error); // 控制台打印错误，方便排查
-//     ElMessage.error('查询审核状态失败，请稍后重试')
-//     router.push({ name: 'JobseekerWorkbench' })
-//     return false
-//   }
-// }
-
 // 页面初始化：校验权限+查询考勤数据
 // ========== 修改：页面初始化逻辑（新增申请状态校验） ==========
 onMounted(async () => {
@@ -161,11 +115,6 @@ onMounted(async () => {
     router.push({ name: 'JobseekerWorkbench' })
     return
   }
-
-  // // ✅ 新增校验：申请状态是否通过
-  // const isApplyPassed = await checkApplyStatus()
-  // if (!isApplyPassed) return
-
 
   // ✅ 关键：调用后端现成接口，根据岗位ID获取完整岗位信息
   try {
@@ -184,7 +133,7 @@ onMounted(async () => {
 // 查询个人考勤记录
 const getAttendanceData = async () => {
   try {
-    const res = await getMyAttendance(seekerId)
+    const res = await getMyAttendance()
     attendanceList.value = res || []
     // 筛选今日考勤信息
     const today = new Date().toLocaleDateString()
@@ -206,7 +155,6 @@ const getAttendanceData = async () => {
 const handleSignIn = async () => {
   try {
     await signIn({
-      seekerId: seekerId,
       jobId: jobInfo.jobId,
       workDate: new Date().toISOString().split('T')[0] // 今日日期，格式匹配后端LocalDate
     })
@@ -226,7 +174,6 @@ const handleSignOut = async () => {
   try {
     // 1. 原有签退接口调用（变量完全复用，无需修改）
     await signOut({
-      seekerId: seekerId,       // 复用现有求职者ID变量
       jobId: jobInfo.jobId,     // 复用现有岗位ID变量
       workDate: new Date().toISOString().split('T')[0] // 复用现有日期变量
     })
@@ -239,7 +186,6 @@ const handleSignOut = async () => {
     // ✅ 新增：自动调用算薪接口（核心改造，复用所有现有变量）
     try {
       const salaryRes = await calculateSalary({
-        seekerId: seekerId,       // 直接复用签退的求职者ID
         jobId: jobInfo.jobId,     // 直接复用签退的岗位ID
         workDate: new Date().toISOString().split('T')[0] // 直接复用签退的工作日期
       })
@@ -249,18 +195,6 @@ const handleSignOut = async () => {
   // 算薪失败（比如已算薪）的提示
   ElMessage.info(salaryError.message || '签退成功，薪资计算稍后为您处理~')
 }
-    //   // 算薪成功提示（友好引导到薪资查询）
-    //   if (salaryRes.code === 200) {
-    //     ElMessage.success('薪资已自动计算，可前往「薪资查询」查看！')
-    //   } else {
-    //     // 后端返回“已算薪”时，仅轻提示，不报错
-    //     ElMessage.info(salaryRes.msg || '该日期薪资已计算，无需重复操作')
-    //   }
-    // } catch (salaryError) {
-    //   // 算薪失败不影响签退结果，仅控制台打印+轻提示
-    //   console.error('自动算薪异常：', salaryError)
-    //   ElMessage.info('签退成功，薪资计算稍后为您处理~')
-    // }
 
     // 3. 刷新考勤数据（原有逻辑不变）
     getAttendanceData()

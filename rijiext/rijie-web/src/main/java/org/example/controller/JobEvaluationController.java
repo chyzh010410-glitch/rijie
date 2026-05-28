@@ -1,9 +1,11 @@
 package org.example.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.pojo.JobEvaluation;
 import org.example.pojo.Result;
 import org.example.service.JobEvaluationService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,21 +15,27 @@ public class JobEvaluationController {
     @Resource
     private JobEvaluationService evaluationService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     /** 求职者提交评价 */
     @PostMapping("/add")
     public Result add(@RequestBody JobEvaluation evaluation) {
+        evaluation.setSeekerId(AuthUtils.getCurrentUserId(request));
         return evaluationService.addEvaluation(evaluation);
     }
 
     /** 求职者查看我提交的评价 */
-    @GetMapping("/my/{seekerId}")
-    public Result myEvaluation(@PathVariable Long seekerId) {
+    @GetMapping("/my")
+    public Result myEvaluation() {
+        Long seekerId = AuthUtils.getCurrentUserId(request);
         return evaluationService.getMyEvaluation(seekerId);
     }
 
     /** 雇主查看收到的评价 */
-    @GetMapping("/employer/{employerId}")
-    public Result employerEvaluation(@PathVariable Long employerId) {
+    @GetMapping("/employer")
+    public Result employerEvaluation() {
+        Long employerId = AuthUtils.getCurrentUserId(request);
         return evaluationService.getEmployerEvaluation(employerId);
     }
 
@@ -51,8 +59,8 @@ public class JobEvaluationController {
 
     /** 检查用户是否有评价权限 */
     @GetMapping("/check-permission")
-    public Result checkPermission(@RequestParam Long seekerId,
-                                  @RequestParam Long jobId) {
+    public Result checkPermission(@RequestParam Long jobId) {
+        Long seekerId = AuthUtils.getCurrentUserId(request);
         return evaluationService.checkEvaluationPermission(seekerId, jobId);
     }
 

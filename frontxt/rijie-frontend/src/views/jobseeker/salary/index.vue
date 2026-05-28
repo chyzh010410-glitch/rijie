@@ -34,27 +34,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
 import { getMySalaries } from '@/api/modules/seeker/salary'
-
-// 1. 修复：seekerId 类型转换，避免传字符串
-const auth = useAuthStore()
-const userInfo = auth.userInfo
-const seekerId = userInfo.id ? Number(userInfo.id) : null
 
 const salaryList = ref([])
 
 onMounted(() => {
-  if (!seekerId) {
-    ElMessage.error('请先登录后再查看薪资记录')
-    return
-  }
   fetchMySalaries()
 })
 
 const fetchMySalaries = async () => {
   try {
-    const res = await getMySalaries(seekerId)
+    const res = await getMySalaries()
     console.log('【薪资接口返回】', res) // 调试用，确认后端字段
 
     // 2. 修复：兼容后端直接返回数组 / 包装对象两种结构

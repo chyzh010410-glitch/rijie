@@ -3,12 +3,14 @@ package org.example.controller;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.dto.JobFilterDTO;
 import org.example.dto.PageResult;
 import org.example.pojo.Job;
 import org.example.pojo.Result;
 import org.example.service.JobService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,27 +27,10 @@ public class JobController {
     @Resource
     private JobService jobService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     // ------------------------------ 求职者端接口 ------------------------------
-    /**
-     * 查询所有已发布的岗位列表（支持岗位类型筛选）
-     * @param jobType 岗位类型（可选，如餐饮、快递，不传则查所有）
-     * @return 岗位列表
-     */
-//    @GetMapping("/published/list")
-//    public Result getPublishedJobs(@RequestParam(required = false) String jobType) {
-//        try {
-//            List<Job> jobList = jobService.getPublishedJobs();
-//            // 若传入岗位类型，进行过滤（也可在Mapper层实现更高效的数据库筛选）
-//            if (jobType != null && !jobType.isEmpty()) {
-//                jobList = jobList.stream()
-//                        .filter(job -> jobType.equals(job.getJobType()))
-//                        .toList();
-//            }
-//            return Result.success(jobList);
-//        } catch (Exception e) {
-//            return Result.fail("查询已发布岗位失败：" + e.getMessage());
-//        }
-//    }
     /**
      * 求职者端：分页查询所有已审核通过的岗位
      * @param jobType 岗位类型（可选，如“服务业”“销售”）
@@ -121,9 +106,11 @@ public class JobController {
     @PostMapping("/publish")
     public Result publishJob(@RequestBody Job job) {
         try {
+            // 覆盖employerId为JWT中的用户ID，防止伪造
+            job.setEmployerId(AuthUtils.getCurrentUserId(request));
             // 简单参数校验：核心字段非空判断
-            if (job.getEmployerId() == null || job.getJobName() == null || job.getDailySalary() == null) {
-                return Result.fail("岗位名称、雇主ID、日薪为必填项");
+            if (job.getJobName() == null || job.getDailySalary() == null) {
+                return Result.fail("岗位名称、日薪为必填项");
             }
             boolean success = jobService.addJob(job);
             if (success) {
@@ -145,11 +132,11 @@ public class JobController {
      */
     @GetMapping("/employer/list")
     public Result getEmployerJobs(
-            @RequestParam Long employerId,
-            @RequestParam(defaultValue = "1") Integer pageNum,  // 新增：分页参数-页码
-            @RequestParam(defaultValue = "10") Integer pageSize  // 新增：分页参数-每页条数
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize
     ) {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             // 调用Service层的分页查询方法
             PageInfo<Job> jobPage = jobService.getJobsByEmployerId(employerId, pageNum, pageSize);
             // 返回分页结果（包含列表+总条数）
@@ -292,8 +279,9 @@ public class JobController {
      * @return 推荐岗位列表
      */
     @GetMapping("/recommend")
-    public Result recommendJobs(@RequestParam Long seekerId) {
+    public Result recommendJobs() {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             return Result.success(jobService.recommendJobs(seekerId));
         } catch (Exception e) {
             return Result.fail("岗位推荐失败：" + e.getMessage());

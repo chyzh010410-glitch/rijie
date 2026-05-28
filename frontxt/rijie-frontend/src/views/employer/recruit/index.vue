@@ -78,13 +78,6 @@ const loading = ref(false)
 // 操作按钮加载状态（按申请ID）
 const operateLoading = ref({})
 
-import { useAuthStore } from '@/stores/auth'
-
-// ========== 登录态：获取雇主ID（从auth store中取） ==========
-const auth = useAuthStore()
-const userInfo = auth.userInfo
-const employerId = userInfo.id // 雇主ID（登录态中的id）
-
 // ========== 工具函数：格式化申请时间（适配后端LocalDateTime格式） ==========
 const formatApplyTime = (row) => {
   if (!row.applyTime) return '未知时间'
@@ -111,15 +104,9 @@ onMounted(async () => {
 
 // ========== API调用：加载雇主的申请记录 ==========
 const fetchApplyList = async () => {
-  // 校验雇主ID（空值/无效值处理）
-  if (!employerId || employerId === 'undefined' || employerId === 'null') {
-    ElMessage.error('未获取到雇主信息，请重新登录')
-    return
-  }
-
   loading.value = true
   try {
-    const res = await getEmployerApplications(employerId)
+    const res = await getEmployerApplications()
     console.log('后端原始响应：', res) // 打印完整响应，方便排查
     console.log('申请记录数组：', res) // 打印实际的申请记录数组
     

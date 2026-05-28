@@ -1,11 +1,13 @@
 package org.example.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.dto.ChartDataDTO;
 import org.example.dto.OverviewDTO;
 import org.example.dto.PieDataDTO;
 import org.example.pojo.Result;
 import org.example.service.StatService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,9 @@ public class StatController {
 
     @Resource
     private StatService statService;
+
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
 
     // ------------------------------ 管理员平台统计接口 ------------------------------
     @GetMapping("/admin/overview")
@@ -69,27 +74,30 @@ public class StatController {
     }
 
     // ------------------------------ 雇主个人统计接口 ------------------------------
-    @GetMapping("/employer/overview/{employerId}")
-    public Result getEmployerOverview(@PathVariable Long employerId) {
+    @GetMapping("/employer/overview")
+    public Result getEmployerOverview() {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             return Result.success(statService.getEmployerOverview(employerId));
         } catch (Exception e) {
             return Result.fail("获取雇主概览失败：" + e.getMessage());
         }
     }
 
-    @GetMapping("/employer/attendance/rate/7d/{employerId}")
-    public Result getAttendanceRate7d(@PathVariable Long employerId) {
+    @GetMapping("/employer/attendance/rate/7d")
+    public Result getAttendanceRate7d() {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             return Result.success(statService.getAttendanceRate7d(employerId));
         } catch (Exception e) {
             return Result.fail("获取考勤正常率统计失败：" + e.getMessage());
         }
     }
 
-    @GetMapping("/employer/recruit/job/{employerId}")
-    public Result getRecruitByJob(@PathVariable Long employerId) {
+    @GetMapping("/employer/recruit/job")
+    public Result getRecruitByJob() {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             return Result.success(statService.getRecruitByJob(employerId));
         } catch (Exception e) {
             return Result.fail("获取招聘人数统计失败：" + e.getMessage());

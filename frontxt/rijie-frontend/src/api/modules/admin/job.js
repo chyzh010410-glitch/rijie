@@ -50,12 +50,6 @@ export const adminUpdateJobStatus = (id, publishStatus) => {
  * @param {Number|String} id - 要删除的岗位ID
  * @returns {Promise} - 后端返回的操作结果
  */
-// export const deleteJob = (id) => {
-//     return request({
-//         url: `/job/admin/delete/${id}`, // 删除接口路径：/api/job/{id}
-//         method: 'delete'   // 请求方式：DELETE
-//     })
-// }
 export const deleteJob = (id) => {
     return request.delete(`/job/admin/delete/${id}`) // 对应后端@PathVariable的路径参数
 }

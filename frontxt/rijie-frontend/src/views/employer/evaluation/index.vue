@@ -26,27 +26,14 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElSkeleton, ElTable, ElTableColumn, ElRate, ElEmpty } from 'element-plus'
 // 确保接口名和evaluation.js导出完全一致
 import { getEmployerEvaluation } from '@/api/modules/evaluation.js'
-import { useAuthStore } from '@/stores/auth'
 
 const evaluationList = ref([])
 const loading = ref(false)
 
-const getEmployerId = () => {
-  return Number(useAuthStore().userId) || null
-}
-
 const loadEmployerEvaluations = async () => {
   loading.value = true
   try {
-    const employerId = getEmployerId()
-    console.log('【调试】雇主ID：', employerId)
-
-    if (!employerId) {
-      ElMessage.error('获取雇主信息失败，请重新登录')
-      return
-    }
-
-    const res = await getEmployerEvaluation(employerId)
+    const res = await getEmployerEvaluation()
     console.log('【调试】接口返回：', res)
 
     const list = Array.isArray(res) ? res : (res.data || res.list || [])

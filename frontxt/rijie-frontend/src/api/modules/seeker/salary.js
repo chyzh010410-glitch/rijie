@@ -19,10 +19,6 @@ export const calculateSalary = (params) => {
  * @param {Number} seekerId - 求职者ID
  * @returns {Promise}
  */
-export const getMySalaries = (seekerId) => {
-    return request({
-        url: '/salary/my',
-        method: 'get',
-        params: { seekerId }
-    })
+export const getMySalaries = () => {
+    return request({ url: '/salary/my', method: 'get' })
 }

@@ -6,12 +6,6 @@
 <script setup>
 // 只需要导入岗位列表组件，无任何其他逻辑
 import JobList from '@/views/jobseeker/job/index.vue';
-// // 2. 导出组件，并注册Header
-// export default {
-//   components: {
-//     JobList
-//   }
-// }
 </script>
 
 <style scoped>

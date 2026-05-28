@@ -2,10 +2,12 @@ package org.example.controller;
 
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.pojo.LoginInfo;
 import org.example.pojo.Result;
 import org.example.pojo.User;
 import org.example.service.UserService;
+import org.example.utils.AuthUtils;
 import org.example.utils.JwtUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +26,9 @@ public class UserController {
     @Resource
     private UserService userService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     // ------------------------------ 通用接口（所有角色） ------------------------------
     /**
      * 用户登录（修改后：生成JWT令牌，封装LoginInfo返回）
@@ -33,17 +38,6 @@ public class UserController {
      */
     @PostMapping("/login")
     public Result login(@RequestParam String username, @RequestParam String password) {
-/*        try {
-            User user = userService.login(username, password);
-            if (user != null) {
-                // 登录成功：返回用户信息（可后续添加JWT令牌）
-                return Result.success(user);
-            } else {
-                return Result.fail("用户名或密码错误");
-            }
-        } catch (Exception e) {
-            return Result.fail("登录异常：" + e.getMessage());
-        }*/
         try {
             User user = userService.login(username, password);
             if (user != null) {
@@ -77,13 +71,13 @@ public class UserController {
     }
 
     /**
-     * 根据ID查询用户信息（个人中心）
-     * @param id 用户ID
+     * 查询当前登录用户信息（个人中心，从JWT获取userId）
      * @return 用户信息
      */
-    @GetMapping("/info/{id}")
-    public Result getUserInfo(@PathVariable Long id) {
+    @GetMapping("/info")
+    public Result getUserInfo() {
         try {
+            Long id = AuthUtils.getCurrentUserId(request);
             User user = userService.getUserById(id);
             if (user != null) {
                 // 构建包含信誉信息的响应
@@ -105,16 +99,6 @@ public class UserController {
         } catch (Exception e) {
             return Result.fail("查询用户信息失败：" + e.getMessage());
         }
-//        try {
-//            User user = userService.getUserById(id);
-//            if (user != null) {
-//                return Result.success(user);
-//            } else {
-//                return Result.fail("用户不存在");
-//            }
-//        } catch (Exception e) {
-//            return Result.fail("查询用户信息失败：" + e.getMessage());
-//        }
     }
 
     /**
@@ -125,6 +109,8 @@ public class UserController {
     @PutMapping("/info/update")
     public Result updateUserInfo(@RequestBody User user) {
         try {
+            // 覆盖userId为JWT中的用户ID，防止用户修改他人信息
+            user.setId(AuthUtils.getCurrentUserId(request));
             boolean success = userService.updateUserInfo(user);
             if (success) {
                 return Result.success("个人信息修改成功");
@@ -197,15 +183,6 @@ public class UserController {
      * 管理员查询所有用户
      * @return 所有用户列表
      */
-//    @GetMapping("/admin/all")
-//    public Result getAllUsers() {
-//        try {
-//            List<User> userList = userService.getAllUsers();
-//            return Result.success(userList);
-//        } catch (Exception e) {
-//            return Result.fail("查询所有用户失败：" + e.getMessage());
-//        }
-//    }
     /**
      * 管理员查询所有用户（带分页）
      * @param pageNum 页码（从1开始）
@@ -230,15 +207,6 @@ public class UserController {
      * @param roleType 角色类型：1-雇主，2-求职者
      * @return 对应角色的用户列表
      */
-//    @GetMapping("/admin/role/{roleType}")
-//    public Result getUsersByRoleType(@PathVariable Integer roleType) {
-//        try {
-//            List<User> userList = userService.getUsersByRoleType(roleType);
-//            return Result.success(userList);
-//        } catch (Exception e) {
-//            return Result.fail("查询角色用户失败：" + e.getMessage());
-//        }
-//    }
     /**
      * 管理员根据角色类型查询用户（带分页）
      * @param roleType 角色类型：0-管理员，1-雇主，2-求职者

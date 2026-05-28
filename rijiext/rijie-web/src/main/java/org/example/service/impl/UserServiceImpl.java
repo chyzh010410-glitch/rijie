@@ -8,11 +8,12 @@ import org.example.pojo.User;
 import org.example.service.UserService;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.util.List;
 
 /**
  * 用户业务层实现类
- * 实现用户相关的业务逻辑，依赖Mapper层完成数据操作
  */
 @Service
 public class UserServiceImpl implements UserService {
@@ -20,39 +21,29 @@ public class UserServiceImpl implements UserService {
     @Resource
     private UserMapper userMapper;
 
-    /**
-     * 用户登录：校验用户名和密码
-     */
+    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
     @Override
     public User login(String username, String password) {
-        // 1. 根据用户名查询用户
         User user = userMapper.selectUserByUsername(username);
-        // 2. 校验密码（测试用明文，生产环境需加密校验）
-        if (user != null && password.equals(user.getPassword())) {
-            // 优化：置空密码，避免敏感信息被传递
+        if (user != null && encoder.matches(password, user.getPassword())) {
             user.setPassword(null);
             return user;
         }
         return null;
     }
 
-    /**
-     * 用户注册：先查重，再新增
-     */
     @Override
     public boolean register(User user) {
-        // 1. 入参校验
         if (user == null || user.getUsername() == null || user.getPassword() == null || user.getRoleType() == null) {
             return false;
         }
-        // 2. 校验用户名是否已存在
         User existUser = userMapper.selectUserByUsername(user.getUsername());
         if (existUser != null) {
-            return false; // 用户名已存在
+            return false;
         }
-        // 3. 设置默认状态：启用（1）
         user.setStatus(1);
-        // 4. 新增用户
+        user.setPassword(encoder.encode(user.getPassword()));
         int rows = userMapper.insertUser(user);
         return rows > 0;
     }

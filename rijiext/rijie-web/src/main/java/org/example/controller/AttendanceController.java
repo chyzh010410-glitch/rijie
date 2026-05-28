@@ -1,9 +1,11 @@
 package org.example.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.pojo.Attendance;
 import org.example.pojo.Result;
 import org.example.service.AttendanceService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -20,6 +22,9 @@ public class AttendanceController {
     @Resource
     private AttendanceService attendanceService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     // ------------------------------ 求职者接口 ------------------------------
     /**
      * 求职者签到（默认使用当天日期，也可指定日期）
@@ -29,10 +34,10 @@ public class AttendanceController {
      * @return 操作结果
      */
     @PostMapping("/sign/in")
-    public Result signIn(@RequestParam Long seekerId,
-                         @RequestParam Long jobId,
+    public Result signIn(@RequestParam Long jobId,
                          @RequestParam(required = false) LocalDate workDate) {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             // 若无指定日期，使用当天
             LocalDate date = workDate == null ? LocalDate.now() : workDate;
             boolean success = attendanceService.signIn(seekerId, jobId, date);
@@ -54,10 +59,10 @@ public class AttendanceController {
      * @return 操作结果
      */
     @PostMapping("/sign/out")
-    public Result signOut(@RequestParam Long seekerId,
-                          @RequestParam Long jobId,
+    public Result signOut(@RequestParam Long jobId,
                           @RequestParam(required = false) LocalDate workDate) {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             LocalDate date = workDate == null ? LocalDate.now() : workDate;
             boolean success = attendanceService.signOut(seekerId, jobId, date);
             if (success) {
@@ -76,8 +81,9 @@ public class AttendanceController {
      * @return 考勤记录列表
      */
     @GetMapping("/my")
-    public Result getMyAttendances(@RequestParam Long seekerId) {
+    public Result getMyAttendances() {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             List<Attendance> attendanceList = attendanceService.getMyAttendances(seekerId);
             return Result.success(attendanceList);
         } catch (Exception e) {
@@ -92,8 +98,9 @@ public class AttendanceController {
      * @return 考勤记录列表
      */
     @GetMapping("/employer")
-    public Result getJobAttendances(@RequestParam Long employerId) {
+    public Result getJobAttendances() {
         try {
+            Long employerId = AuthUtils.getCurrentUserId(request);
             List<Attendance> attendanceList = attendanceService.getJobAttendances(employerId);
             return Result.success(attendanceList);
         } catch (Exception e) {

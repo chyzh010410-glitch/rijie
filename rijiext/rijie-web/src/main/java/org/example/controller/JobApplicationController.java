@@ -1,9 +1,11 @@
 package org.example.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.pojo.JobApplication;
 import org.example.pojo.Result;
 import org.example.service.JobApplicationService;
+import org.example.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,9 @@ public class JobApplicationController {
     @Resource
     private JobApplicationService applicationService;
 
+    @jakarta.annotation.Resource
+    private HttpServletRequest request;
+
     // ------------------------------ 求职者接口 ------------------------------
     /**
      * 提交岗位申请
@@ -28,8 +33,9 @@ public class JobApplicationController {
      * @return 操作结果
      */
     @PostMapping("/apply")
-    public Result applyJob(@RequestParam Long seekerId, @RequestParam Long jobId) {
+    public Result applyJob(@RequestParam Long jobId) {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             boolean success = applicationService.applyJob(seekerId, jobId);
             if (success) {
                 return Result.success("岗位申请提交成功，请等待雇主审核");
@@ -47,8 +53,9 @@ public class JobApplicationController {
      * @return 申请记录列表
      */
     @GetMapping("/my")
-    public Result getMyApplications(@RequestParam Long seekerId) {
+    public Result getMyApplications() {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             List<JobApplication> applicationList = applicationService.getMyApplications(seekerId);
             return Result.success(applicationList);
         } catch (Exception e) {
@@ -58,8 +65,9 @@ public class JobApplicationController {
 
     // ✅ 新增：查询单个岗位的申请状态（seekerId + jobId）
     @GetMapping("/status")
-    public Result getApplyStatus(@RequestParam Long seekerId, @RequestParam Long jobId) {
+    public Result getApplyStatus(@RequestParam Long jobId) {
         try {
+            Long seekerId = AuthUtils.getCurrentUserId(request);
             JobApplication application = applicationService.getApplyStatus(seekerId, jobId);
             if (application != null) {
                 // 返回申请状态（0-待审核，1-已通过，2-已拒绝，3-已入职）
@@ -98,9 +106,9 @@ public class JobApplicationController {
      * @return 申请记录列表
      */
     @GetMapping("/employer")
-    public Result getJobApplications(@RequestParam Long employerId) {
+    public Result getJobApplications() {
         try {
-//            List<JobApplication> applicationList = applicationService.getJobApplications(employerId);
+            Long employerId = AuthUtils.getCurrentUserId(request);
             List<Map<String, Object>> applicationList = applicationService.getJobApplications(employerId);
             return Result.success(applicationList);
         } catch (Exception e) {
