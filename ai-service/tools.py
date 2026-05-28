@@ -10,6 +10,17 @@ BACKEND = os.getenv("MAIN_BACKEND_URL", "http://localhost:8080")
 def _headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
+KEYS = ["jobName", "jobType", "workAddress", "dailySalary", "workStartTime",
+        "workEndTime", "recruitNum", "jobRequire", "id"]
+
+def _trim_jobs(data):
+    """精简岗位数据，只保留用户关心的字段，避免返回太大导致LLM 400"""
+    jobs = data.get("jobList") or data.get("jobs") or []
+    if isinstance(jobs, list):
+        data["jobList"] = [{k: j.get(k) for k in KEYS if k in j} for j in jobs]
+        data.pop("totalPages", None)
+    return data
+
 
 def search_jobs(token: str, keyword: str = "", job_type: str = "",
                 min_salary: int = 0, max_salary: int = 0,
@@ -33,7 +44,7 @@ def search_jobs(token: str, keyword: str = "", job_type: str = "",
             r.raise_for_status()
             data = r.json()
             if data.get("code") == 200:
-                return data["data"]
+                return _trim_jobs(data["data"])
             return {"error": data.get("message", "查询失败")}
     except Exception as e:
         return {"error": f"搜索岗位失败: {str(e)}"}
@@ -61,7 +72,7 @@ def recommend_jobs(token: str) -> dict:
             r.raise_for_status()
             data = r.json()
             if data.get("code") == 200:
-                return {"jobs": data["data"]}
+                return _trim_jobs({"jobs": data["data"]})
             return {"error": data.get("message", "推荐失败")}
     except Exception as e:
         return {"error": f"推荐岗位失败: {str(e)}"}

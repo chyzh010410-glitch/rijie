@@ -111,12 +111,17 @@ def chat(message: str, token: str, history: list = None) -> str:
 
     messages = []
     if history:
-        for h in history:
+        for h in history[-10:]:  # 只保留最近10轮，避免token超限
             if h.get("role") == "user":
                 messages.append(HumanMessage(content=h["content"]))
             elif h.get("role") == "assistant":
                 messages.append(AIMessage(content=h["content"]))
 
     messages.append(HumanMessage(content=message))
-    result = _agent.invoke({"messages": messages, "token": token})
-    return result["messages"][-1].content
+
+    try:
+        result = _agent.invoke({"messages": messages, "token": token})
+        return result["messages"][-1].content
+    except Exception as e:
+        print(f"[AI服务] Agent调用异常: {e}", flush=True)
+        return "抱歉，处理您的请求时出错了。请稍后重试或换个方式提问~"
