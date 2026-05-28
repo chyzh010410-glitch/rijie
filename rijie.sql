@@ -92,6 +92,30 @@ INSERT INTO `job_application` VALUES (12, 5, 11, 0, '2025-12-21 10:00:02');
 INSERT INTO `job_application` VALUES (13, 8, 12, 0, '2025-12-21 11:22:41');
 
 -- ----------------------------
+-- Table structure for job_evaluation
+-- ----------------------------
+DROP TABLE IF EXISTS `job_evaluation`;
+CREATE TABLE `job_evaluation`  (
+  `id` bigint(0) NOT NULL AUTO_INCREMENT,
+  `job_id` bigint(0) NOT NULL,
+  `seeker_id` bigint(0) NOT NULL,
+  `employer_id` bigint(0) NOT NULL,
+  `score` tinyint(0) NOT NULL COMMENT '1-5星',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `tags` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '评价标签，逗号分隔',
+  `is_anonymous` tinyint(0) NULL DEFAULT 0 COMMENT '是否匿名：0-否，1-是',
+  `status` tinyint(0) NULL DEFAULT 1 COMMENT '1正常 0禁用',
+  `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `job_id`(`job_id`) USING BTREE,
+  INDEX `seeker_id`(`seeker_id`) USING BTREE,
+  INDEX `employer_id`(`employer_id`) USING BTREE,
+  CONSTRAINT `job_evaluation_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `job_evaluation_ibfk_2` FOREIGN KEY (`seeker_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `job_evaluation_ibfk_3` FOREIGN KEY (`employer_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '岗位评价表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for job_seeker_info
 -- ----------------------------
 DROP TABLE IF EXISTS `job_seeker_info`;
@@ -198,6 +222,10 @@ CREATE TABLE `sys_user`  (
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   `skill_tags` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '技能标签（逗号分隔，如餐饮,收银）',
   `resident_address` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '常住地址',
+  `reputation_score` decimal(3, 2) NULL DEFAULT 5.00 COMMENT '信誉分(0-5分)',
+  `total_ratings` int(0) NULL DEFAULT 0 COMMENT '总评价数',
+  `positive_ratings` int(0) NULL DEFAULT 0 COMMENT '好评数(4-5星)',
+  `negative_ratings` int(0) NULL DEFAULT 0 COMMENT '差评数(1-2星)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username`(`username`) USING BTREE,
   UNIQUE INDEX `phone`(`phone`) USING BTREE,
