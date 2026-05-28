@@ -42,6 +42,7 @@
 
 <script setup>
 import { ref, nextTick, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElButton, ElInput, ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
@@ -51,7 +52,7 @@ const visible = ref(false)
 const input = ref('')
 const loading = ref(false)
 const chat = useChatStore()
-const messages = chat.messages
+const { messages } = storeToRefs(chat)
 const chatBody = ref(null)
 
 const toggleChat = () => { visible.value = true }
