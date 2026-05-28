@@ -10,7 +10,10 @@
       <div class="ai-chat-panel" v-show="visible">
         <div class="chat-header">
           <span>AI智能客服 · 小兼</span>
-          <el-button link @click="visible = false" style="color:#fff;font-size:18px">×</el-button>
+          <div>
+            <el-button link @click="chat.clearHistory()" style="color:#fff;font-size:12px;margin-right:8px" title="清空对话">清空</el-button>
+            <el-button link @click="visible = false" style="color:#fff;font-size:18px">×</el-button>
+          </div>
         </div>
         <div class="chat-body" ref="chatBody">
           <div v-for="(msg, i) in messages" :key="i" :class="['msg', msg.role]">
@@ -41,14 +44,14 @@
 import { ref, nextTick, watch } from 'vue'
 import { ElButton, ElInput, ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { useChatStore } from '@/stores/chat'
 import axios from 'axios'
 
 const visible = ref(false)
 const input = ref('')
 const loading = ref(false)
-const messages = ref([
-  { role: 'assistant', content: '您好！我是小兼，日结兼职平台的智能客服。您可以问我：\n• "帮我找朝阳区餐饮类的日结"\n• "有没有日薪200以上的快递岗位"\n• "推荐一些适合我的工作"' }
-])
+const chat = useChatStore()
+const messages = chat.messages
 const chatBody = ref(null)
 
 const toggleChat = () => { visible.value = true }
@@ -68,7 +71,7 @@ async function send() {
   const text = input.value.trim()
   if (!text || loading.value) return
 
-  messages.value.push({ role: 'user', content: text })
+  chat.addMessage({ role: 'user', content: text })
   input.value = ''
   loading.value = true
   scrollBottom()
@@ -76,14 +79,15 @@ async function send() {
   try {
     const auth = useAuthStore()
     if (!auth.token) {
-      messages.value.push({ role: 'assistant', content: '请先登录后再使用智能客服功能~' })
+      chat.addMessage({ role: 'assistant', content: '请先登录后再使用智能客服功能~' })
       loading.value = false
       return
     }
-    const { data } = await axios.post('/ai/chat', { message: text, token: auth.token })
-    messages.value.push({ role: 'assistant', content: data.reply })
+    const history = messages.value.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+    const { data } = await axios.post('/ai/chat', { message: text, token: auth.token, history })
+    chat.addMessage({ role: 'assistant', content: data.reply })
   } catch {
-    messages.value.push({ role: 'assistant', content: '抱歉，AI服务暂时不可用，请稍后再试。' })
+    chat.addMessage({ role: 'assistant', content: '抱歉，AI服务暂时不可用，请稍后再试。' })
   } finally {
     loading.value = false
     scrollBottom()

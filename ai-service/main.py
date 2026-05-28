@@ -18,6 +18,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     token: str
+    history: list = []
 
 
 class ChatResponse(BaseModel):
@@ -29,7 +30,7 @@ async def ai_chat(req: ChatRequest):
     if not req.token:
         raise HTTPException(status_code=401, detail="未提供认证token")
     try:
-        reply = chat(req.message, req.token)
+        reply = chat(req.message, req.token, req.history)
         return ChatResponse(reply=reply)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI服务异常: {str(e)}")
