@@ -199,18 +199,15 @@ public class JobServiceImpl implements JobService {
     public List<Job> recommendJobs(Long seekerId) {
         // 1. 查询求职者信息
         User user = userMapper.selectUserById(seekerId);
-        // 获取求职者信誉分
-        Double reputationScore = user.getReputationScore() != null ? user.getReputationScore() : 5.0;
-        if (user == null || user.getSkillTags() == null && user.getResidentAddress() == null) {
-            return new ArrayList<>(); // 无匹配条件，返回空
+        if (user == null || (user.getSkillTags() == null && user.getResidentAddress() == null)) {
+            return new ArrayList<>();
         }
 
         List<Job> recommendList = new ArrayList<>();
 
         // 2. 按技能标签推荐
         if (user.getSkillTags() != null && !user.getSkillTags().isEmpty()) {
-            // 将技能标签拆分为列表（如“餐饮,收银”→["餐饮","收银"]）
-            List<String> skillList = List.of(user.getSkillTags().split(","));
+            List<String> skillList = List.of(user.getSkillTags().split(“,”));
             List<Job> skillJobs = jobMapper.recommendJobsBySkill(skillList);
             recommendList.addAll(skillJobs);
         }
@@ -221,27 +218,39 @@ public class JobServiceImpl implements JobService {
             recommendList.addAll(addressJobs);
         }
 
-        // 4. 去重（根据岗位ID去重）
-        List<Job> finalList = recommendList.stream()
+        // 4. 去重
+        List<Job> distinct = recommendList.stream().distinct().collect(Collectors.toList());
+
+        // 5. 批量加载雇主信息，解决N+1查询
+        List<Long> employerIds = distinct.stream()
+                .map(Job::getEmployerId)
                 .distinct()
+                .collect(Collectors.toList());
+        Map<Long, User> employerMap = new HashMap<>();
+        if (!employerIds.isEmpty()) {
+            List<User> employers = userMapper.selectUsersByIds(employerIds);
+            employerMap = employers.stream()
+                    .collect(Collectors.toMap(User::getId, u -> u));
+        }
+
+        // 6. 过滤+排序（使用缓存的雇主信息）
+        return distinct.stream()
                 .filter(job -> {
-                    // 查询雇主的信誉分
-                    User employer = userMapper.selectUserById(job.getEmployerId());
-                    return employer != null &&
-                            employer.getReputationScore() != null &&
-                            employer.getReputationScore() >= 3.0;
+                    User employer = employerMap.get(job.getEmployerId());
+                    return employer != null
+                            && employer.getReputationScore() != null
+                            && employer.getReputationScore() >= 3.0;
                 })
                 .sorted((j1, j2) -> {
-                    // 按雇主信誉分+薪资综合排序
-                    User emp1 = userMapper.selectUserById(j1.getEmployerId());
-                    User emp2 = userMapper.selectUserById(j2.getEmployerId());
-                    double score1 = (emp1.getReputationScore() * 20) + j1.getDailySalary().doubleValue();
-                    double score2 = (emp2.getReputationScore() * 20) + j2.getDailySalary().doubleValue();
-                    return Double.compare(score2, score1); // 降序
+                    User emp1 = employerMap.get(j1.getEmployerId());
+                    User emp2 = employerMap.get(j2.getEmployerId());
+                    double s1 = emp1 != null && emp1.getReputationScore() != null ? emp1.getReputationScore() : 3.0;
+                    double s2 = emp2 != null && emp2.getReputationScore() != null ? emp2.getReputationScore() : 3.0;
+                    double score1 = s1 * 20 + j1.getDailySalary().doubleValue();
+                    double score2 = s2 * 20 + j2.getDailySalary().doubleValue();
+                    return Double.compare(score2, score1);
                 })
-                .limit(10) // 最多推荐10个
+                .limit(10)
                 .collect(Collectors.toList());
-
-        return finalList;
     }
 }

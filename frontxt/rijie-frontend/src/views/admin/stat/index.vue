@@ -26,10 +26,10 @@ const router = useRouter()
 const overview = ref({})
 const userGrowthChart = ref(null)
 
-// 加载概览数据
+// 加载概览数据（拦截器已解包data，res即后端data字段）
 const loadOverview = async () => {
   const res = await getAdminOverview()
-  overview.value = res.data
+  overview.value = res
 }
 
 // 初始化用户增长图表
@@ -37,9 +37,9 @@ const initUserGrowthChart = async () => {
   const res = await getUserGrowth7d()
   const chart = echarts.init(userGrowthChart.value)
   chart.setOption({
-    xAxis: { type: 'category', data: res.data.map(i => i.date) },
+    xAxis: { type: 'category', data: res.map(i => i.date) },
     yAxis: { type: 'value' },
-    series: [{ name: '新增用户', type: 'line', data: res.data.map(i => i.num), smooth: true }]
+    series: [{ name: '新增用户', type: 'line', data: res.map(i => i.num), smooth: true }]
   })
 }
 

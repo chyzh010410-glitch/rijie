@@ -101,6 +101,7 @@ import {
   getUsersByRoleType,
   updateUserStatus
 } from '@/api/modules/admin/user.js'
+import { getRoleText, getRoleTagType, formatTime } from '@/utils/constants.js'
 
 // 分页变量（和岗位管理完全一样）
 const currentPage = ref(1)
@@ -182,22 +183,6 @@ const handleToggleStatus = async (id, targetStatus) => {
       ElMessage.error(text + '失败：' + err.message)
     }
   }
-}
-
-// 角色映射
-const getRoleText = (code) => {
-  const map = { 0: '管理员', 1: '雇主', 2: '求职者' }
-  return map[code] || '未知'
-}
-const getRoleTagType = (code) => {
-  const map = { 0: 'danger', 1: 'primary', 2: 'success' }
-  return map[code] || 'info'
-}
-
-// 时间格式化
-const formatTime = (str) => {
-  if (!str) return '-'
-  return str.replace('T', ' ').substring(0, 19)
 }
 
 onMounted(() => {

@@ -80,6 +80,7 @@ import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus'; // 新增ElMessageBox，删除前确认
 // 导入封装好的岗位查询API
 import { getAllJobs } from '@/api/modules/admin/job.js';
+import { getPublishStatusText as getStatusText, getPublishStatusTagType as getStatusTagType, formatTime } from '@/utils/constants.js';
 
 // 分页响应式变量
 const currentPage = ref(1);
@@ -127,32 +128,6 @@ const handleSizeChange = (newPageSize) => {
 const handleCurrentChange = (newCurrentPage) => {
     currentPage.value = newCurrentPage;
     search();
-};
-
-// 发布状态文字映射
-const getStatusText = (code) => {
-    const statusMap = {
-        0: '未审核',
-        1: '已审核',
-        2: '已结束'
-    };
-    return statusMap[code] || `未知状态(${code})`;
-};
-
-// 发布状态标签样式
-const getStatusTagType = (code) => {
-    const typeMap = {
-        0: 'info',
-        1: 'success',
-        2: 'info'
-    };
-    return typeMap[code] || 'info';
-};
-
-// 时间格式化
-const formatTime = (timeStr) => {
-    if (!timeStr) return '-';
-    return timeStr.replace('T', ' ').substring(0, 19);
 };
 
 // 新增岗位（占位）

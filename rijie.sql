@@ -18,6 +18,44 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
+-- Table structure for job_type_dict (岗位类型字典，规范化job_type)
+-- ----------------------------
+DROP TABLE IF EXISTS `job_type_dict`;
+CREATE TABLE `job_type_dict` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `type_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uk_type_name`(`type_name`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '岗位类型字典表';
+
+INSERT INTO `job_type_dict` VALUES (1, '餐饮'), (2, '快递'), (3, '家教'), (4, '零售'), (5, '促销'), (6, '安保');
+
+-- ----------------------------
+-- Table structure for skill (技能标签，规范化存储)
+-- ----------------------------
+DROP TABLE IF EXISTS `skill`;
+CREATE TABLE `skill` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `skill_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uk_skill_name`(`skill_name`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '技能标签表';
+
+INSERT INTO `skill` VALUES (1, '餐饮'), (2, '收银'), (3, '快递'), (4, '配送'), (5, '家教'), (6, '零售'), (7, '促销'), (8, '安保');
+
+-- ----------------------------
+-- Table structure for user_skill (用户-技能多对多关联)
+-- ----------------------------
+DROP TABLE IF EXISTS `user_skill`;
+CREATE TABLE `user_skill` (
+  `user_id` bigint NOT NULL,
+  `skill_id` int NOT NULL,
+  PRIMARY KEY (`user_id`, `skill_id`) USING BTREE,
+  CONSTRAINT `user_skill_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_skill_ibfk_2` FOREIGN KEY (`skill_id`) REFERENCES `skill` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户技能关联表';
+
+-- ----------------------------
 -- Table structure for attendance
 -- ----------------------------
 DROP TABLE IF EXISTS `attendance`;
@@ -32,8 +70,10 @@ CREATE TABLE `attendance`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `seeker_id`(`seeker_id`) USING BTREE,
   INDEX `job_id`(`job_id`) USING BTREE,
+  INDEX `idx_work_date`(`work_date`) USING BTREE,
   CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`seeker_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `attendance_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `attendance_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_attendance_status` CHECK (`attendance_status` BETWEEN 0 AND 3)
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '考勤表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -78,8 +118,11 @@ CREATE TABLE `job_application`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `seeker_id`(`seeker_id`) USING BTREE,
   INDEX `job_id`(`job_id`) USING BTREE,
+  INDEX `idx_seeker_status`(`seeker_id`, `apply_status`) USING BTREE,
+  UNIQUE KEY `uq_seeker_job`(`seeker_id`, `job_id`),
   CONSTRAINT `job_application_ibfk_1` FOREIGN KEY (`seeker_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `job_application_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `job_application_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_apply_status` CHECK (`apply_status` BETWEEN 0 AND 4)
 ) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '求职申请表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -112,7 +155,8 @@ CREATE TABLE `job_evaluation`  (
   INDEX `employer_id`(`employer_id`) USING BTREE,
   CONSTRAINT `job_evaluation_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `job_evaluation_ibfk_2` FOREIGN KEY (`seeker_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `job_evaluation_ibfk_3` FOREIGN KEY (`employer_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `job_evaluation_ibfk_3` FOREIGN KEY (`employer_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_eval_score` CHECK (`score` BETWEEN 1 AND 5)
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '岗位评价表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -125,7 +169,6 @@ CREATE TABLE `job_seeker_info`  (
   `gender` tinyint(0) NULL DEFAULT NULL COMMENT '0-女，1-男，2-未知',
   `age` tinyint(0) NULL DEFAULT NULL,
   `education` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `skills` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '技能标签，逗号分隔',
   `bank_account` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `bank_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `address` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
@@ -146,7 +189,7 @@ CREATE TABLE `part_time_job`  (
   `id` bigint(0) NOT NULL AUTO_INCREMENT,
   `employer_id` bigint(0) NOT NULL,
   `job_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `job_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `job_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '引用job_type_dict.type_name',
   `work_address` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `work_start_time` time(0) NOT NULL,
   `work_end_time` time(0) NOT NULL,
@@ -154,12 +197,17 @@ CREATE TABLE `part_time_job`  (
   `recruit_num` int(0) NOT NULL,
   `job_desc` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
   `job_require` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `publish_status` tinyint(0) NULL DEFAULT 0 COMMENT '0-草稿，1-已发布，2-已结束',
+  `publish_status` tinyint(0) NOT NULL DEFAULT 0 COMMENT '0-草稿，1-已发布，2-已结束',
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `employer_id`(`employer_id`) USING BTREE,
-  CONSTRAINT `part_time_job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  INDEX `idx_publish_type`(`publish_status`, `job_type`) USING BTREE,
+  INDEX `idx_create_time`(`create_time`) USING BTREE,
+  CONSTRAINT `part_time_job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_publish_status` CHECK (`publish_status` BETWEEN 0 AND 2),
+  CONSTRAINT `chk_daily_salary` CHECK (`daily_salary` > 0),
+  CONSTRAINT `chk_recruit_num` CHECK (`recruit_num` > 0)
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '日结兼职岗位表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -196,8 +244,11 @@ CREATE TABLE `salary`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `seeker_id`(`seeker_id`) USING BTREE,
   INDEX `job_id`(`job_id`) USING BTREE,
+  INDEX `idx_work_date_seeker`(`work_date`, `seeker_id`) USING BTREE,
   CONSTRAINT `salary_ibfk_1` FOREIGN KEY (`seeker_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `salary_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `salary_ibfk_2` FOREIGN KEY (`job_id`) REFERENCES `part_time_job` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_pay_status` CHECK (`pay_status` BETWEEN 0 AND 1),
+  CONSTRAINT `chk_salary_amount` CHECK (`salary_amount` > 0)
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '薪资表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -212,7 +263,7 @@ DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user`  (
   `id` bigint(0) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `password` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `real_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `phone` char(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
@@ -220,7 +271,6 @@ CREATE TABLE `sys_user`  (
   `status` tinyint(0) NULL DEFAULT 1 COMMENT '0-禁用，1-启用',
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  `skill_tags` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '技能标签（逗号分隔，如餐饮,收银）',
   `resident_address` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '常住地址',
   `reputation_score` decimal(3, 2) NULL DEFAULT 5.00 COMMENT '信誉分(0-5分)',
   `total_ratings` int(0) NULL DEFAULT 0 COMMENT '总评价数',
@@ -229,7 +279,9 @@ CREATE TABLE `sys_user`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username`(`username`) USING BTREE,
   UNIQUE INDEX `phone`(`phone`) USING BTREE,
-  UNIQUE INDEX `email`(`email`) USING BTREE
+  UNIQUE INDEX `email`(`email`) USING BTREE,
+  CONSTRAINT `chk_role_type` CHECK (`role_type` BETWEEN 0 AND 2),
+  CONSTRAINT `chk_user_status` CHECK (`status` BETWEEN 0 AND 1)
 ) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------

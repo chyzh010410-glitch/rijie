@@ -78,8 +78,15 @@ public interface UserMapper {
     @Select("SELECT * FROM sys_user WHERE phone = #{phone} AND id != #{id}")
     User selectByPhoneAndNotId(@Param("phone") String phone, @Param("id") Long id);
 
-    // ========== 新增：邮箱查询方法 (复制粘贴，只改字段名phone→email) ==========
+    // ========== 新增：邮箱查询方法 ==========
     @Select("SELECT * FROM sys_user WHERE email = #{email} AND id != #{userId}")
     User selectByEmailAndNotId(@Param("email") String email, @Param("id") Long id);
 
+    @Select("<script>" +
+            "SELECT * FROM sys_user WHERE id IN " +
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    List<User> selectUsersByIds(@Param("ids") List<Long> ids);
 }
