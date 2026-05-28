@@ -207,7 +207,7 @@ public class JobServiceImpl implements JobService {
 
         // 2. 按技能标签推荐
         if (user.getSkillTags() != null && !user.getSkillTags().isEmpty()) {
-            List<String> skillList = List.of(user.getSkillTags().split(“,”));
+            List<String> skillList = List.of(user.getSkillTags().split(","));
             List<Job> skillJobs = jobMapper.recommendJobsBySkill(skillList);
             recommendList.addAll(skillJobs);
         }
@@ -226,12 +226,10 @@ public class JobServiceImpl implements JobService {
                 .map(Job::getEmployerId)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, User> employerMap = new HashMap<>();
-        if (!employerIds.isEmpty()) {
-            List<User> employers = userMapper.selectUsersByIds(employerIds);
-            employerMap = employers.stream()
-                    .collect(Collectors.toMap(User::getId, u -> u));
-        }
+        Map<Long, User> employerMap = employerIds.isEmpty()
+                ? new HashMap<>()
+                : userMapper.selectUsersByIds(employerIds).stream()
+                        .collect(Collectors.toMap(User::getId, u -> u));
 
         // 6. 过滤+排序（使用缓存的雇主信息）
         return distinct.stream()
