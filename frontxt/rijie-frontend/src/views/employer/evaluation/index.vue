@@ -24,22 +24,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElSkeleton, ElTable, ElTableColumn, ElRate, ElEmpty } from 'element-plus'
-// ✅ 确保接口名和evaluation.js导出完全一致
+// 确保接口名和evaluation.js导出完全一致
 import { getEmployerEvaluation } from '@/api/modules/evaluation.js'
+import { useAuthStore } from '@/stores/auth'
 
 const evaluationList = ref([])
 const loading = ref(false)
 
 const getEmployerId = () => {
-  const userInfoStr = localStorage.getItem('userInfo')
-  if (!userInfoStr) return null
-  try {
-    const userInfo = JSON.parse(userInfoStr)
-    return Number(userInfo.id)
-  } catch (e) {
-    console.error('解析雇主信息失败', e)
-    return null
-  }
+  return Number(useAuthStore().userId) || null
 }
 
 const loadEmployerEvaluations = async () => {

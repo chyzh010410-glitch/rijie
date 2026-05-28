@@ -236,6 +236,8 @@ import { getApprovedJobsForSeeker, searchApprovedJobs } from '@/api/modules/seek
 import { submitJobApplication, getMyApplications } from '@/api/modules/seeker/application.js';
 // 评价接口
 import { getJobEvaluation, addEvaluation, getMyEvaluation } from '@/api/modules/evaluation.js'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 
 // ========== 原有功能代码（完全不动） ==========
 const popoverVisible = ref(false)
@@ -266,8 +268,7 @@ const getStatusClass = (status) => {
 }
 const goToAttendance = (item) => {
   popoverVisible.value = false;
-  localStorage.setItem('currentJobId', item.jobId);
-  localStorage.setItem('currentJobName', item.jobName);
+  useAppStore().setCurrentJob({ jobId: item.jobId, jobName: item.jobName });
   router.push({ name: 'SeekerAttendance' });
   ElMessage.success('即将为您跳转至考勤页面');
 };
@@ -335,10 +336,9 @@ const confirmApply = async () => {
   applyDialogVisible.value = false
   const job = currentJob.value
   const { id: jobId } = job
-  const userInfoStr = localStorage.getItem('userInfo')
-  let userInfo = null
-  if (userInfoStr) { try { userInfo = JSON.parse(userInfoStr) } catch (e) { localStorage.clear() } }
-  const token = localStorage.getItem('token')
+  const auth = useAuthStore()
+  const userInfo = auth.userInfo
+  const token = auth.token
   const isSeeker = userInfo?.roleType === 2
   if (!token || !userInfo || !isSeeker || !userInfo.id) {
     ElMessage.error('请先以求职者身份登录')
@@ -355,8 +355,8 @@ const confirmApply = async () => {
 
 const getMyApplicationsList = async () => {
   try {
-    const userInfoStr = localStorage.getItem('userInfo')
-    const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+    const auth = useAuthStore()
+    const userInfo = auth.userInfo
     if (userInfo?.id) {
       const res = await getMyApplications(userInfo.id)
       myApplications.value = res?.data || res || []
@@ -367,9 +367,7 @@ const getMyApplicationsList = async () => {
 // ===================== ✅ 评价核心逻辑（适配弹窗，无路由！） =====================
 // 从userInfo获取用户ID
 const getUserId = () => {
-  const userInfoStr = localStorage.getItem('userInfo')
-  if (!userInfoStr) return null
-  try { return Number(JSON.parse(userInfoStr).id) } catch (e) { return null }
+  return Number(useAuthStore().userId) || null
 }
 const seekerId = ref(getUserId())
 

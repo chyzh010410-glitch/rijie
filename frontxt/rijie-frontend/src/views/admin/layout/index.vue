@@ -63,13 +63,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 // 引入Element Plus图标
 import { Histogram, House, Promotion, Tools, User } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 
 // 退出登录方法
 const handleLogout = () => {
-  // 清除本地Token
-  localStorage.removeItem('token')
+  // 清除登录状态
+  useAuthStore().logout()
   // 跳转到登录页
   router.push('/login')
   ElMessage.success('退出登录成功')

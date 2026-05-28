@@ -65,6 +65,7 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 // 导入岗位API
 import { getEmployerJobs, updateJobStatus, deleteJob } from '@/api/modules/employer/job.js'
+import { useAuthStore } from '@/stores/auth'
 
 // ========== 接收父组件参数 ==========
 const emit = defineEmits(['onEdit']) // 触发编辑事件，通知父组件回显数据
@@ -86,7 +87,8 @@ onMounted(() => {
 // ========== 对接后端：获取当前雇主的岗位列表 ==========
 const getMyJobList = async () => {
   try {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const auth = useAuthStore()
+    const userInfo = auth.userInfo
     // 调用后端接口（支持分页：传currentPage和pageSize）
     const res = await getEmployerJobs({
       employerId: userInfo.id,

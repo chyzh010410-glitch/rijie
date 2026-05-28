@@ -102,13 +102,15 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import JobList from './JobList.vue'
 import { publishJob, updateJob } from '@/api/modules/employer/job.js'
+import { useAuthStore } from '@/stores/auth'
 import { cityOptions } from '@/utils/cityData.js'
 
 // ========== 基础变量 ==========
 const activeTab = ref('form')
 const isEditMode = ref(false)
 const publishFormRef = ref(null)
-const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+const auth = useAuthStore()
+const userInfo = auth.userInfo
 const employerId = ref(userInfo.id || '')
 
 // ========== 表单数据 ==========

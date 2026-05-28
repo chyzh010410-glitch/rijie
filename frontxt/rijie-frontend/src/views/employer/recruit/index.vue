@@ -78,8 +78,11 @@ const loading = ref(false)
 // 操作按钮加载状态（按申请ID）
 const operateLoading = ref({})
 
-// ========== 登录态：获取雇主ID（从localStorage的userInfo中取） ==========
-const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+import { useAuthStore } from '@/stores/auth'
+
+// ========== 登录态：获取雇主ID（从auth store中取） ==========
+const auth = useAuthStore()
+const userInfo = auth.userInfo
 const employerId = userInfo.id // 雇主ID（登录态中的id）
 
 // ========== 工具函数：格式化申请时间（适配后端LocalDateTime格式） ==========

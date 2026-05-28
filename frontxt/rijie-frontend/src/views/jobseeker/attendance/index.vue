@@ -85,18 +85,21 @@ import { getStatusText, getStatusColor } from '@/api/modules/constant/attendance
 import { getJobDetailById  } from '@/api/modules/seeker/job.js'
 // 在考勤页script setup顶部导入
 import { calculateSalary } from '@/api/modules/seeker/salary'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 const router = useRouter()
-// ========== ✅ 修复错误3：安全获取用户信息+求职者ID ==========
-const userInfoStr = localStorage.getItem('userInfo')
-const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-const seekerId = userInfo?.id || null; // 取不到就是null，后续做校验
+// ========== 安全获取用户信息+求职者ID（从Pinia auth store） ==========
+const auth = useAuthStore()
+const userInfo = auth.userInfo
+const seekerId = auth.userId || null; // 取不到就是null，后续做校验
 
-// ========== ✅ 修复错误4：安全初始化岗位信息 ==========
+// ========== 安全初始化岗位信息（从Pinia app store） ==========
+const app = useAppStore()
 const jobInfo = reactive({
-  jobId: localStorage.getItem('currentJobId') || '',
-  jobName: localStorage.getItem('currentJobName') || '',
-  workStartTime: localStorage.getItem('workStartTime') || '',
-  workEndTime: localStorage.getItem('workEndTime') || ''
+  jobId: app.currentJobId || '',
+  jobName: app.currentJobName || '',
+  workStartTime: app.workStartTime || '',
+  workEndTime: app.workEndTime || ''
 })
 
 // 状态变量

@@ -2,24 +2,21 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 // 1. 创建Axios实例（全局配置）
 const request = axios.create({
-  baseURL: '/api', // 对应Vite代理的前缀（后续配置Vite代理）
-  timeout: 5000,   // 请求超时时间
-  headers: {       // 默认请求头
-    'Content-Type': 'application/json;charset=utf-8'
-  }
+  baseURL: '/api',
+  timeout: 5000,
+  headers: { 'Content-Type': 'application/json;charset=utf-8' }
 })
 
 // 2. 请求拦截器：自动加Token、统一请求参数
 request.interceptors.request.use(
   (config) => {
-    // 从localStorage取登录后的Token（登录成功后要存Token）
-    const token = localStorage.getItem('token')
-    if (token) {
-      // 与后端约定的Token格式（Bearer + Token）
-      config.headers.Authorization = `Bearer ${token}`
+    const auth = useAuthStore()
+    if (auth.token) {
+      config.headers.Authorization = `Bearer ${auth.token}`
     }
     return config
   },
@@ -47,9 +44,8 @@ request.interceptors.response.use(
           '提示',
           { type: 'warning' }
         ).then(() => {
-          // 清除过期Token
-          localStorage.removeItem('token')
-          // 跳转到登录页
+          const auth = useAuthStore()
+          auth.logout()
           router.push('/login')
         })
       }

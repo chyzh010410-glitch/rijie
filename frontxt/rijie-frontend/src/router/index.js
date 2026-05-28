@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -163,32 +164,24 @@ const router = createRouter({
 
 // ---------------- 增强版路由守卫（登录+角色校验） ----------------
 router.beforeEach((to, from, next) => {
-  // 1. 无需登录的页面直接放行
   if (!to.meta.requiresAuth) {
     next()
     return
   }
 
-  // 2. 检查是否登录（无Token跳登录页）
-  const token = localStorage.getItem('token')
-  if (!token) {
+  const auth = useAuthStore()
+  if (!auth.isLoggedIn) {
     ElMessage.error('请先登录')
     next('/login')
     return
   }
 
-  // 3. 角色校验（仅对有roleType的路由生效）
-  if (to.meta.roleType !== undefined) {
-    const currentRoleType = Number(localStorage.getItem('roleType'))
-    // 角色不匹配 → 直接跳登录页（避免跳转不存在的路径）
-    if (currentRoleType !== to.meta.roleType) {
-      ElMessage.error('无权限访问该页面，请重新登录')
-      next('/login')
-      return
-    }
+  if (to.meta.roleType !== undefined && auth.roleType !== to.meta.roleType) {
+    ElMessage.error('无权限访问该页面，请重新登录')
+    next('/login')
+    return
   }
 
-  // 4. 所有校验通过，放行
   next()
 })
 

@@ -49,8 +49,11 @@ import { getEmployerAttendance, updateAttendanceStatus } from '@/api/modules/att
 // 导入状态映射
 import { getStatusText, getStatusColor } from '@/api/modules/constant/attendance.js'
 
+import { useAuthStore } from '@/stores/auth'
+
 // 获取当前登录雇主信息
-const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+const auth = useAuthStore()
+const userInfo = auth.userInfo
 const employerId = userInfo.id // 雇主ID
 
 // 考勤列表

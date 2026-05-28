@@ -28,6 +28,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { loginApi } from '@/api/modules/login'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 
 // 表单数据
@@ -83,30 +84,8 @@ const handleLogin = async () => {
     // 2. 调用登录接口（分开传username/password，匹配loginApi的参数要求）
     const loginInfo = await loginApi(loginForm.username, loginForm.password)
 
-    // ========== 新增：先清空旧的登录信息（关键！） ==========
-    localStorage.clear() // 或者精准清空：localStorage.removeItem('userInfo') + localStorage.removeItem('token')
-    // ========== 新增结束 ==========
-
-    // 3. 存储关键信息到本地
-    // localStorage.setItem('token', loginInfo.token)        // 存储Token
-    // localStorage.setItem('roleType', loginInfo.roleType) // 存储角色类型（0/1/2）
-    // localStorage.setItem('username', loginInfo.username) // 存储用户名
-    // localStorage.setItem('realName', loginInfo.realName) // 存储真实姓名
-    // 1. 整合用户信息为对象（包含现有字段，phone/email初始为空）
-    const userInfo = {
-      id: loginInfo.id,
-      username: loginInfo.username,   // 登录接口返回的用户名
-      realName: loginInfo.realName,   // 登录接口返回的真实姓名
-      phone: loginInfo.phone || '',   // 若登录接口没返回，初始为空字符串
-      email: loginInfo.email || '',   // 同理，初始为空
-      roleType: loginInfo.roleType    // 角色类型（0/1/2）
-    }
-    // 2. 存储到localStorage
-    localStorage.setItem('token', loginInfo.token)       // 单独存token
-    localStorage.setItem('userInfo', JSON.stringify(userInfo)) // 整合存用户信息
-        // ========== 补充：单独存储roleType（路由守卫可能读这个） ==========
-    localStorage.setItem('roleType', loginInfo.roleType) 
-    // ========== 补充结束 ==========
+    const auth = useAuthStore()
+    auth.login(loginInfo)
 
     // 4. 根据角色跳转对应首页
     const homePath = roleToHomeMap[loginInfo.roleType] || '/admin/index'

@@ -86,6 +86,7 @@ import {
 } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 import { updateUserInfo, checkPhoneUnique, checkEmailUnique } from '@/api/modules/seeker/user.js'
 const router = useRouter()
 
@@ -123,23 +124,18 @@ const infoRules = ref({
 const dialogVisible = ref(false)
 
 
-// 初始化：从localStorage读取userInfo（兼容空字段）
-// ✅ 核心修改：页面初始化 - 直接读取登录时存入的用户信息（无需调用后端接口）
 onMounted(() => {
-  // 从localStorage读取登录时保存的完整用户信息
-  const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
-  if (storedUser && storedUser.id) { // 有用户ID代表已登录
-    userInfo.value = { ...storedUser }
-    // 同步到编辑表单，必须把id传进去！！！
-    editForm.value = { 
-      id: storedUser.id,
-      username: storedUser.username || '',
-      realName: storedUser.realName || '',
-      phone: storedUser.phone || '',
-      email: storedUser.email || ''
+  const auth = useAuthStore()
+  if (auth.isLoggedIn) {
+    userInfo.value = { ...auth.userInfo }
+    editForm.value = {
+      id: auth.userId,
+      username: auth.userInfo.username || '',
+      realName: auth.userInfo.realName || '',
+      phone: auth.userInfo.phone || '',
+      email: auth.userInfo.email || ''
     }
   } else {
-    // 未登录/缓存失效，直接跳登录页
     ElMessage.warning('请先登录！')
     router.push('/login')
   }
@@ -187,13 +183,15 @@ const handleUpdateInfo = async () => {
 
     // 3. 修改成功 - 同步数据+提示+关闭弹窗
     ElMessage.success(res || '个人信息修改成功！')
-    // 更新页面显示的用户信息
     userInfo.value.realName = editForm.value.realName
     userInfo.value.phone = editForm.value.phone
     userInfo.value.email = editForm.value.email
-    // 更新localStorage缓存，刷新页面也能显示最新信息
-    localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-    
+    const auth = useAuthStore()
+    auth.updateProfile({
+      realName: editForm.value.realName,
+      phone: editForm.value.phone,
+      email: editForm.value.email
+    })
     dialogVisible.value = false
   } catch (error) {
     // 表单验证失败提示，接口错误由你的axios拦截器自动提示，无需重复写
@@ -203,19 +201,9 @@ const handleUpdateInfo = async () => {
   }
 }
 
-// 退出登录（不变）
-// 你之前的handleLogout可能只删了token，现在补充：
 const handleLogout = () => {
-  // 方案1：清空所有localStorage（简单粗暴，推荐）
-  localStorage.clear()
-
-  // 方案2：精准清空（如果有其他非登录存储，用这个）
-  // localStorage.removeItem('token')
-  // localStorage.removeItem('userInfo')
-  // localStorage.removeItem('roleType')
-  // localStorage.removeItem('username')
-  // localStorage.removeItem('realName')
-  
+  const auth = useAuthStore()
+  auth.logout()
   router.push('/login')
   ElMessage.info('已退出登录~')
 }

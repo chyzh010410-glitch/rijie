@@ -34,10 +34,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 import { getMySalaries } from '@/api/modules/seeker/salary'
 
 // 1. 修复：seekerId 类型转换，避免传字符串
-const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+const auth = useAuthStore()
+const userInfo = auth.userInfo
 const seekerId = userInfo.id ? Number(userInfo.id) : null
 
 const salaryList = ref([])
